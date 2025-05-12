@@ -2,4 +2,5 @@
 members = [
 	"sha1_cracker",
 	"simple_scanner"
+	"modular_scanner"
 ]
