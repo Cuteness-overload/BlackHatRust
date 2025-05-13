@@ -1,30 +1,105 @@
+/// The `Crtsh` struct provides functionality for subdomain enumeration using the crt.sh service.
+/// 
+/// # Overview
+/// 
+/// This module is part of a larger subdomain enumeration framework and is implemented as a `Module`
+/// and `SubdomainModule`. It interacts with the crt.sh service to fetch subdomains associated with
+/// a given target domain.
+/// 
+/// # Methods
+/// 
+/// - `new()`: Constructs a new instance of the `Crtsh` struct.
+/// - `name()`: Returns the name of the module as `"subdomains/crtsh"`.
+/// - `description()`: Provides a brief description of the module.
+/// - `enumerate(target: &str)`: Asynchronously enumerates subdomains for the given target domain.
+/// 
+/// # Errors
+/// 
+/// The `enumerate` method returns a `Result` which may contain:
+/// - A vector of valid subdomains (`Vec<String>`).
+/// - An `Error` if the HTTP request or DNS resolution fails.
+/// 
+/// # Example Usage
+/// 
+/// ```rust
+/// let crtsh = Crtsh::new();
+/// let subdomains = crtsh.enumerate("example.com").await.unwrap();
+/// for subdomain in subdomains {
+///     println!("{}", subdomain);
+/// }
+/// ```
 use crate::{
-	model::{Subdomain, CrtShEntry},
+	module::{Module, SubdomainModule},
 	Error,
 };
-use reqwest::Client;
-use std::{collections::HashSet, time::Duration};
-use futures::{stream, StreamExt};
-use trust_dns_resolver::{
-	AsyncResolver,
-	config::{ResolverConfig, ResolverOpts},
-	name_server::{GenericConnection, GenericConnectionProvider, TokioRuntime},
-};
+use std::collections::HashSet;
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-// Create a type alias for the DNS resolver
-// This is a generic connection provider for the Tokio runtime
-// The Tokio runtime is an asynchronous runtime for Rust
-type DnsResolver = AsyncResolver<GenericConnection, GenericConnectionProvider<TokioRuntime>>;
 
-pub async fn enumerate(http_client: &Client, target: &str) -> Result<Vec<Subdomain>, Error> {
+pub struct Crtsh {}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct CrtShEntry {
+	name_value: String,
+}
+
+impl Crtsh {
+	pub fn new() -> Self {
+		Crtsh {}
+	}
+}
+
+/// Implementation of the `Module` trait for the `Crtsh` struct.
+/// 
+/// This implementation provides the following functionalities:
+/// 
+/// - `name`: Returns the name of the module as a `String`. In this case, it is `"subdomains/crtsh"`.
+/// - `description`: Returns a brief description of the module as a `String`. Here, it describes the module as
+///   `"Subdomain enumeration using crt.sh"`.
+/// 
+/// The `Crtsh` module is designed for subdomain enumeration by leveraging the crt.sh service.
+impl Module for Crtsh {
+	fn name(&self) -> String {
+		"subdomains/crtsh".to_string()
+	}
+
+	fn description(&self) -> String {
+		"Subdomain enumeration using crt.sh".to_string()
+	}
+}
+
+
+#[async_trait]
+impl SubdomainModule for Crtsh {
+	/// Asynchronously enumerates subdomains for the given target domain.
+	/// 
+	/// This method fetches subdomains from the crt.sh service and filters out duplicates and invalid
+	/// subdomains. 
+	/// 
+	/// # Arguments
+	/// 
+	/// * `target` - A string slice representing the target domain for which to enumerate subdomains.
+	/// 
+	/// # Returns
+	/// 
+	/// A `Result` containing either:
+	/// - A vector of valid subdomains (`Vec<String>`).
+	/// - An `Error` if the HTTP request fails.
+async fn enumerate(&self target: &str) -> Result<Vec<String>, Error> {
 	
 	// Get subdomains from crt.sh
-	let entries: Vec<CrtShEntry> = http_client
-		.get(&format!("https://crt.sh/?q=%25.{}&output=json", target))
-		.send()
-		.await?
-		.json()
-		.await?;
+	let response = reqwest::get(&format!("https://crt.sh/?q=%25.{}&output=json", target)).await?;
+
+	if !res.status().is_success() {
+		return Err(Error::InvalidHttpResponse(self.name()));
+	}
+
+	let entries: Vec<CrtShEntry> = match res.json().await {
+		Ok(info) => info,
+		Err(_) => return Err(Error::InvalidHttpResponse(self.name())),
+	};
 
 	// Filter out duplicates and invalid subdomains
 	let mut subdomains: HashSet<String> = entries
@@ -40,41 +115,5 @@ pub async fn enumerate(http_client: &Client, target: &str) -> Result<Vec<Subdoma
 		.filter(|subdomain: &String| !subdomain.contains('*'))
 		.collect();
 
-	subdomains.insert(target.to_string());
-	
-	// Create Asyncronous DNS Resolver
-	let dns_resolver = AsyncResolver::tokio(
-		ResolverConfig::default(),
-		{
-			let mut opts  = ResolverOpts::default();
-			opts.timeout = Duration::from_secs(4);
-			opts
-		},
-	)
-	.expect("subdomain resolver: building  DNS client");
-
-	// Check if subdomains resolve to an IP address
-	let subdomains: Vec<Subdomain> = stream::iter(subdomains.into_iter())
-		.map(|domain| Subdomain {
-			domain,
-			open_ports: Vec::new(),
-		})
-		.filter_map(|subdomain| {
-			let dns_resolver = dns_resolver.clone();
-			async move {
-				if resolves(&dns_resolver, &subdomain).await {
-					Some(subdomain)
-				} else {
-					None
-				}
-			}
-		})
-		.collect()
-		.await;
-
-	Ok(subdomains)
-}
-
-async fn resolves(dns_resolver: &DnsResolver, domain: &Subdomain) -> bool {
-	dns_resolver.lookup_ip(domain.domain.as_str()).await.is_ok()
+	Ok(subdomains.into_iter().collect())
 }

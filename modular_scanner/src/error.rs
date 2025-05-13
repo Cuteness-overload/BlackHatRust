@@ -11,6 +11,8 @@ pub enum Error {
 	CgiUsage,
 	#[error("Reqwest: {0}")]
 	Reqwest(String),
+	#[error("Invalid Http Response: {0}")]
+	InvalidHttpResponse(String),
 }
 
 impl std::convert::From<reqwest::Error> for Error {
