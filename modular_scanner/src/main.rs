@@ -1,7 +1,7 @@
 use std::env;
 
 use anyhow::Result;
-use clap::{Arg, Command};
+use clap::{Arg, Command, value_parser};
 
 mod error;
 pub use error::Error;
@@ -11,49 +11,63 @@ mod common_ports;
 mod dns;
 mod cli;
 
-#[tokio::main]
-async fn main() -> Result<(), anyhow::Error>{
+fn main() -> Result<()>{
+	
+
 	
 	let cli = Command::new(clap::crate_name!())
-		.version(crate::version!())
+		.version(clap::crate_version!())
 		.about("Subdomain and Port Scanner with vulnerability detection capabilities.")
-
-
-	// Set Concurrency limits
-	let subdomains_concurrency = 100;
-	let ports_concurrency = 200;
-
-	// Start timer
-	let start = Instant::now();
-	println!("Starting scan for target: {}", target);
-
-	// Setup HTTP client
-	let http_timeout = Duration::from_secs(10);
-	let http_client = Client::builder().timeout(http_timeout).build()?;
-
-	// Get subdomains asynchronously
-	let subdomains = subdomains::enumerate(&http_client, target).await?;
-
-	// Scan Ports on subdomains asyncronously
-	// The scan_ports function is called for each subdomain
-	// The scan_ports function returns a Subdomain struct with the open ports
-	let scan_result: Vec<Subdomain> = stream::iter(subdomains.into_iter())
-		.map(|subdomain| ports::scan_ports(subdomain, port_size, ports_concurrency))
-		.buffer_unordered(subdomains_concurrency)
-		.collect()
-		.await;
-
-	// Print time taken for scan
-	let scan_duration = start.elapsed();
-	println!("Scan completed in {:?}", scan_duration);
-
-	// Print results
-	for subdomain in scan_result {
-		println!("{}:", &subdomain.domain);
-		for port in &subdomain.open_ports {
-			println!("\t{}: open", port.port);
-		}
-		println!();
+		.subcommand(Command::new("modules").about("List all modules"))
+		.subcommand(Command::new("scan")
+			.about("Scan a target")
+			.arg(Arg::new("target")
+				.help("The domain name to scan")
+				.required(true)
+				.short('d')
+				.long("domain")
+				.takes_value(true)
+			)
+			.arg(Arg::new("ports")
+				.help("Number of ports to scan")
+				.short('p')
+				.long("ports")
+				.default_value("100")
+				.value_parser(value_parser!(u16))
+			)
+			.arg(Arg::new("vuln")
+				.help("Scan for vulnerabilities")
+				.short('v')
+				.long("vuln")
+				.takes_value(false)
+			)
+			.arg(Arg::new("enumerate")
+				.help("Enumerate subdomains")
+				.short('e')
+				.long("enumerate")
+				.takes_value(false)
+			)
+		)
+		.arg_required_else_help(true)
+		.get_matches();
+	
+	// Set up logging
+	env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+		.format(|buf, record| {
+			println!("{} [!] {}", buf.timestamp(), record.args());
+			Ok(())
+		})
+		.init();
+	log::info!("Starting modular scanner...\n");
+	
+	if let Some(_) = cli.subcommand_matches("modules") {
+		cli::modules();
+	} else if let Some(matches) = cli.subcommand_matches("scan") {
+		let target = matches.get_one::<String>("target").unwrap();
+		let ports: u16 = matches.get_one::<u16>("ports").unwrap().clone();
+		let enumerate = matches.is_present("enumerate");
+		let vuln = matches.is_present("vuln");
+		cli::scan(target, ports, enumerate, vuln)?;
 	}
 
 	// Return Ok

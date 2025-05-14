@@ -33,7 +33,7 @@ pub trait HttpModule: Module {
 		&self,
 		client: &Client,
 		endpoint: &str,
-	) -> Result<Option<http::HttpFinding>, Error>;
+	) -> Result<Option<HttpFinding>, Error>;
 }
 
 #[async_trait]
@@ -64,6 +64,7 @@ HttpFinding is an enum that represents a finding from an HTTP module.
 pub struct Port {
 	pub port: u16,
 	pub is_open: bool,
+	pub findings: Vec<HttpFinding>,
 }
 
 #[derive(Debug, Clone)]
@@ -98,20 +99,20 @@ Function definitions for modules
 
 pub fn get_http_modules() -> Vec<Box<dyn HttpModule>> {
 	vec![
-		Box::new(http::DirectoryListingDisclosure::new()),
-		Box::new(http::DotEnvDisclosure::new()),
-		Box::new(http::DsStoreDisclosure::new()),
-		Box::new(http::TraefikDashboardUnauthenticatedAccess::new()),
-		Box::new(http::PrometheusDashboardUnauthenticatedAccess::new()),
-		Box::new(http::KibanaUnauthenticatedAccess::new()),
-		Box::new(http::GitlabOpenRegistrations::new()),
-		Box::new(http::GitHeadDisclosure::new()),
-		Box::new(http::GitDirectoryDisclosure::new()),
-		Box::new(http::GitConfigDisclosure::new()),
-		Box::new(http::EtcdUnauthenticatedAccess::new()),
-		Box::new(http::Cve2017_9506::new()),
-		Box::new(http::Cve2018_7600::new()),
-		Box::new(http::ElasticsearchUnauthenticatedAccess::new()),
+		// Box::new(http::DirectoryListingDisclosure::new()),
+		// Box::new(http::DotEnvDisclosure::new()),
+		// Box::new(http::DsStoreDisclosure::new()),
+		// Box::new(http::TraefikDashboardUnauthenticatedAccess::new()),
+		// Box::new(http::PrometheusDashboardUnauthenticatedAccess::new()),
+		// Box::new(http::KibanaUnauthenticatedAccess::new()),
+		// Box::new(http::GitlabOpenRegistrations::new()),
+		// Box::new(http::GitHeadDisclosure::new()),
+		// Box::new(http::GitDirectoryDisclosure::new()),
+		// Box::new(http::GitConfigDisclosure::new()),
+		// Box::new(http::EtcdUnauthenticatedAccess::new()),
+		// Box::new(http::Cve2017_9506::new()),
+		// Box::new(http::Cve2018_7600::new()),
+		// Box::new(http::ElasticsearchUnauthenticatedAccess::new()),
 	]
 }
 

@@ -1,6 +1,6 @@
 use crate::{
 	common_ports::MOST_COMMON_PORTS, 
-	model::{Port, Subdomain}
+	modules::{Port, Subdomain}
 };
 use std::{
 	net::{SocketAddr, ToSocketAddrs},
@@ -35,7 +35,7 @@ pub async fn scan_ports(mut subdomain: Subdomain, port_size: u16, concurrency: u
 }
 
 async fn scan_port(mut socket_address: SocketAddr, port: u16) -> Port {
-	let timeout = Duration::from_secs(3);
+	let timeout = Duration::from_secs(2);
 	socket_address.set_port(port);
 
 	let is_open = matches!(
@@ -43,5 +43,5 @@ async fn scan_port(mut socket_address: SocketAddr, port: u16) -> Port {
 		Ok(Ok(_)),
 	);
 
-	Port { port, is_open }
+	Port { port, is_open, findings: Vec::new() }
 }
