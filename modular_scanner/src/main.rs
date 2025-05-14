@@ -1,36 +1,23 @@
-use std::{
-	env,
-	time::{Duration, Instant},
-};
-use reqwest::Client;
-use futures::{stream, StreamExt};
+use std::env;
+
+use anyhow::Result;
+use clap::{Arg, Command};
 
 mod error;
 pub use error::Error;
-mod model;
-use model::Subdomain;
+mod modules;
 mod ports;
-mod subdomains;
 mod common_ports;
+mod dns;
+mod cli;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error>{
 	
-	// Argument Parsing
-    let args: Vec<String> = env::args().collect();
-	//  Check if the number of arguments is correct
-	if (args.len() != 3 && args.len() != 2) || args[1] == "--help" { 
-		return Err(Error::CgiUsage.into());
-	}
-	// first argument is the target
-	let target = args[1].as_str();
-	// second argument is the port size
-	// if not provided or parsing fails, default to 100
-	let port_size = if args.len() == 3 {
-		args[2].parse::<u16>().unwrap_or(100)
-	} else {
-		100
-	};
+	let cli = Command::new(clap::crate_name!())
+		.version(crate::version!())
+		.about("Subdomain and Port Scanner with vulnerability detection capabilities.")
+
 
 	// Set Concurrency limits
 	let subdomains_concurrency = 100;

@@ -1,6 +1,6 @@
 [workspace]
 members = [
 	"sha1_cracker",
-	"simple_scanner"
+	"simple_scanner",
 	"modular_scanner"
 ]

@@ -1,9 +1,9 @@
-use crate::Error
+use crate::Error;
 use async_trait::async_trait;
 use reqwest::Client;
 
-mod http
-mod subdomains
+mod http;
+mod subdomains;
 
 
 /*
@@ -23,8 +23,8 @@ They are both #[async_trait]s.
 */
 
 pub trait Module {
-	fn name(&self) -> &str;
-	fn description(&self) -> &str;
+	fn name(&self) -> String;
+	fn description(&self) -> String;
 }
 
 #[async_trait]
@@ -96,7 +96,7 @@ Function definitions for modules
 	- `get_subdomain_modules`: Returns a vector of all subdomain modules.
 */
 
-pub fn get_http_modules() Vec<Box<dyn HttpModule>> {
+pub fn get_http_modules() -> Vec<Box<dyn HttpModule>> {
 	vec![
 		Box::new(http::DirectoryListingDisclosure::new()),
 		Box::new(http::DotEnvDisclosure::new()),
@@ -115,9 +115,9 @@ pub fn get_http_modules() Vec<Box<dyn HttpModule>> {
 	]
 }
 
-pub fn get_subdomain_modules() Vec<Box<dyn SubdomainModule>> {
+pub fn get_subdomain_modules() -> Vec<Box<dyn SubdomainModule>> {
 	vec![
-		Box::new(subdomains.Crtsh::new()),
-		Box::new(subdomains.WebArchive::new()),
+		Box::new(subdomains::Crtsh::new()),
+		Box::new(subdomains::WebArchive::new()),
 	]
 }
