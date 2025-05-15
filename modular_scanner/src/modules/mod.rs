@@ -64,7 +64,7 @@ HttpFinding is an enum that represents a finding from an HTTP module.
 pub struct Port {
 	pub port: u16,
 	pub is_open: bool,
-	pub findings: Vec<HttpFinding>,
+	//pub findings: Vec<HttpFinding>,
 }
 
 #[derive(Debug, Clone)]
@@ -99,7 +99,7 @@ Function definitions for modules
 
 pub fn get_http_modules() -> Vec<Box<dyn HttpModule>> {
 	vec![
-		// Box::new(http::DirectoryListingDisclosure::new()),
+		Box::new(http::DirectoryListingDisclosure::new()),
 		// Box::new(http::DotEnvDisclosure::new()),
 		// Box::new(http::DsStoreDisclosure::new()),
 		// Box::new(http::TraefikDashboardUnauthenticatedAccess::new()),

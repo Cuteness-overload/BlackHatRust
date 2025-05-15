@@ -43,5 +43,5 @@ async fn scan_port(mut socket_address: SocketAddr, port: u16) -> Port {
 		Ok(Ok(_)),
 	);
 
-	Port { port, is_open, findings: Vec::new() }
+	Port { port, is_open }
 }

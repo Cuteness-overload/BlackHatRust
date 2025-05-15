@@ -101,7 +101,7 @@ impl SubdomainModule for Crtsh {
 		};
 
 		// Filter out duplicates and invalid subdomains
-		let mut subdomains: HashSet<String> = entries
+		let subdomains: HashSet<String> = entries
 			.into_iter()
 			.flat_map(|entry| {
 				entry

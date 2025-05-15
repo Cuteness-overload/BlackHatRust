@@ -145,6 +145,19 @@ pub fn scan(target: &str, ports: u16, enumerate: bool, vuln: bool) -> Result<(),
 					}
 				}
 			}
+
+			stream::iter(targets.into_iter())
+				.for_each_concurrent(vuln_concurrency,|(module, target)| {
+					let http_client = http_client.clone();
+					async move {
+						match module.scan(&http_client, &target).await {
+							Ok(Some(finding)) => println!("{:?}", &finding),
+							Ok(None) => {}
+							Err(err) => log::debug!("Error: {}", err),
+						};
+					}
+				})
+				.await;
 		}
 
 	});

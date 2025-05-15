@@ -1,5 +1,5 @@
-// mod directory_listing_disclosure;
-// pub use directory_listing_disclosure::DirectoryListingDisclosure;
+mod directory_listing_disclosure;
+pub use directory_listing_disclosure::DirectoryListingDisclosure;
 // mod dotenv_disclosure;
 // pub use dotenv_disclosure::DotEnvDisclosure;
 // mod ds_store_disclosure;
